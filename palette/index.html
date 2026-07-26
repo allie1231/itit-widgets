@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>itit palette</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="../style.css" />
+<style>
+  .pal { min-height: 200px; }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 8px 0 12px;
+  }
+  .sw {
+    aspect-ratio: 1;
+    border-radius: 10px;
+  }
+  .codes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    font-size: 9.5px;
+    color: var(--ink-soft);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .5px;
+    margin-bottom: 16px;
+  }
+  .mood {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--ink-strong);
+    text-align: center;
+    padding-top: 12px;
+    border-top: 1px dotted var(--sky);
+  }
+  .hint {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-top: 4px;
+    letter-spacing: .3px;
+  }
+</style>
+</head>
+<body>
+<div class="widget pal">
+  <div class="label">Today's color</div>
+  <div class="swatches" id="sw"></div>
+  <div class="codes" id="codes"></div>
+  <div class="mood" id="mood">SPRING WARM</div>
+  <div class="hint" id="hint">봄의 살구빛 · 잇재의 하루</div>
+</div>
+
+<script>
+  // 스프링 웜 팔레트 조합 5개 (재영님 취향 안에서만)
+  const PALETTES = [
+    { colors: ['#D8E9F4','#FDEFC9','#FCE0E7','#7B98AE'], mood: 'SPRING WARM', hint: '봄의 살구빛 · 잇재의 하루' },
+    { colors: ['#F5E6DA','#FCE0E7','#E7D5F0','#5A7A93'], mood: 'BLUSH DUSK', hint: '해질녘 볼터치' },
+    { colors: ['#FDEFC9','#F5E6DA','#D8E9F4','#8A9AA8'], mood: 'CREAM MORNING', hint: '따뜻한 아침 커피' },
+    { colors: ['#E0EEE4','#FDEFC9','#F5D8D0','#7B9587'], mood: 'MINT LEMON', hint: '민트와 레몬 · 초여름' },
+    { colors: ['#EDE4F0','#FCE0E7','#F5E6DA','#8A7B95'], mood: 'LILAC SOFT', hint: '라일락과 살구' },
+  ];
+
+  // 날짜 기반 시드 → 매일 같은 팔레트가 뜨지만 매일 바뀜
+  function todaysPalette(){
+    const d = new Date();
+    const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+    return PALETTES[seed % PALETTES.length];
+  }
+
+  function render(){
+    const p = todaysPalette();
+    const sw = document.getElementById('sw');
+    const codes = document.getElementById('codes');
+    sw.innerHTML = '';
+    codes.innerHTML = '';
+    p.colors.forEach(c => {
+      const box = document.createElement('div');
+      box.className = 'sw';
+      box.style.background = c;
+      sw.appendChild(box);
+      const code = document.createElement('span');
+      code.textContent = c.replace('#','');
+      codes.appendChild(code);
+    });
+    document.getElementById('mood').textContent = p.mood;
+    document.getElementById('hint').textContent = p.hint;
+  }
+  render();
+</script>
+</body>
+</html>

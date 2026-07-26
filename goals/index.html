@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>itit goals</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="../style.css" />
+<style>
+  .goals { position: relative; min-height: 200px; }
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .dot {
+    flex: 0 0 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--blush);
+    margin-top: 8px;
+  }
+  .txt { flex: 1; }
+
+  /* 편집 모드 */
+  .edit-mode .item { align-items: center; }
+  .edit-mode .txt {
+    padding: 6px 10px;
+    background: var(--sky-soft);
+    border-radius: 6px;
+    outline: none;
+    color: var(--ink-strong);
+  }
+  .edit-mode .txt:focus { background: var(--butter-soft); }
+
+  .save {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    display: none;
+  }
+  .edit-mode .save { display: block; }
+  .edit-mode .gear { display: none; }
+</style>
+</head>
+<body>
+<div class="widget goals" id="root">
+  <div class="label">This week</div>
+  <button class="gear" title="편집" onclick="startEdit()">✎</button>
+  <button class="save" onclick="saveEdit()">저장</button>
+  <div class="list" id="list"></div>
+</div>
+
+<script>
+  const KEY = 'itit.goals';
+  const DEFAULT = [
+    '드로널 4기 기획 완성',
+    '상세페이지 시안 3개 정리',
+    '30분 걷기 5회 채우기',
+  ];
+
+  function load(){
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY));
+      if (Array.isArray(v) && v.length) return v;
+    } catch(e){}
+    return DEFAULT;
+  }
+
+  function render(edit = false){
+    const list = document.getElementById('list');
+    const root = document.getElementById('root');
+    root.classList.toggle('edit-mode', edit);
+    list.innerHTML = '';
+    load().forEach((g, i) => {
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML =
+        '<span class="dot"></span>' +
+        '<span class="txt" ' + (edit ? 'contenteditable="true"' : '') + '>' +
+          escapeHtml(g) +
+        '</span>';
+      list.appendChild(row);
+    });
+  }
+
+  function startEdit(){ render(true); }
+  function saveEdit(){
+    const items = [...document.querySelectorAll('.txt')]
+      .map(el => el.textContent.trim())
+      .filter(Boolean);
+    localStorage.setItem(KEY, JSON.stringify(items.length ? items : DEFAULT));
+    render(false);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  render();
+</script>
+</body>
+</html>
