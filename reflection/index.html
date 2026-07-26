@@ -7,80 +7,106 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link rel="stylesheet" href="../style.css" />
 <style>
+  body { padding: 24px 20px; }
   .refl { position: relative; }
-  .field {
-    margin-bottom: 14px;
-  }
-  .field:last-of-type { margin-bottom: 0; }
-  .field .k {
-    font-size: 10px;
+  .date-line {
+    font-size: 11px;
     letter-spacing: 1.5px;
     color: var(--ink-soft);
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-top: 4px;
+    margin-bottom: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .field {
+    margin-bottom: 18px;
+  }
+  .field:last-of-type { margin-bottom: 0; }
+  .field .k {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-strong);
+    margin-bottom: 8px;
+    letter-spacing: -.2px;
   }
   .field textarea {
     width: 100%;
-    min-height: 44px;
-    padding: 8px 10px;
-    border: 1px solid var(--sky-soft);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--ink-strong);
+    min-height: 56px;
+    padding: 12px 14px;
+    border: none;
+    background: #FBFDFE;
+    border-left: 3px solid var(--sky);
+    border-radius: 4px;
+    color: #3D5468;
     font-family: inherit;
-    font-size: 12.5px;
-    line-height: 1.55;
+    font-size: 14.5px;
+    font-weight: 400;
+    line-height: 1.7;
     resize: vertical;
     outline: none;
-    transition: border-color .15s;
+    transition: background .15s, border-color .15s;
+    letter-spacing: -.1px;
   }
   .field textarea:focus {
-    border-color: var(--ink-soft);
+    background: white;
+    border-left-color: var(--ink);
   }
   .field textarea::placeholder {
-    color: var(--ink-soft);
-    opacity: .5;
+    color: #B0C4D3;
+    opacity: 1;
   }
+
+  /* 각 필드마다 다른 색조 힌트 */
+  .field.good textarea { border-left-color: #C8DDB8; }
+  .field.good textarea:focus { border-left-color: #7A9E5B; }
+  .field.bad textarea { border-left-color: #F0C6C6; }
+  .field.bad textarea:focus { border-left-color: #C46B6B; }
+  .field.next textarea { border-left-color: #F5D998; }
+  .field.next textarea:focus { border-left-color: #B8853A; }
 
   .hint-save {
     position: absolute;
-    bottom: -4px;
+    top: 24px;
     right: 0;
-    font-size: 9px;
+    font-size: 9.5px;
     letter-spacing: 1.5px;
     color: var(--ink-soft);
     text-transform: uppercase;
     opacity: 0;
     transition: opacity .3s;
   }
-  .hint-save.show { opacity: .6; }
+  .hint-save.show { opacity: .7; }
 </style>
 </head>
 <body>
 <div class="widget refl">
   <div class="label">Reflection</div>
-
-  <div class="field">
-    <div class="k">잘한 것</div>
-    <textarea id="good" placeholder="오늘 뭐가 좋았어요?" rows="2"></textarea>
-  </div>
-  <div class="field">
-    <div class="k">아쉬운 것</div>
-    <textarea id="bad" placeholder="뭐가 아쉬웠어요?" rows="2"></textarea>
-  </div>
-  <div class="field">
-    <div class="k">다음에는</div>
-    <textarea id="next" placeholder="내일은 어떻게 해볼까요?" rows="2"></textarea>
-  </div>
-
+  <div class="date-line" id="dateLine">—</div>
   <span class="hint-save" id="hint">저장됨</span>
+
+  <div class="field good">
+    <div class="k">잘한 것</div>
+    <textarea id="good" placeholder="오늘 좋았던 순간을 짧게라도 남겨두세요" rows="2"></textarea>
+  </div>
+  <div class="field bad">
+    <div class="k">아쉬운 것</div>
+    <textarea id="bad" placeholder="다시 하면 다르게 할 수 있는 것" rows="2"></textarea>
+  </div>
+  <div class="field next">
+    <div class="k">다음에는</div>
+    <textarea id="next" placeholder="내일 조금이라도 시도해볼 것" rows="2"></textarea>
+  </div>
 </div>
 
 <script src="../shared.js"></script>
 <script>
+  const DAYS = ['일','월','화','수','목','금','토'];
   const today = ITIT.today();
-  const rec = ITIT.loadReflection(today);
+  const d = new Date();
+  document.getElementById('dateLine').textContent =
+    (d.getMonth()+1) + '월 ' + d.getDate() + '일 · ' + DAYS[d.getDay()] + '요일';
 
+  const rec = ITIT.loadReflection(today);
   document.getElementById('good').value = rec.good || '';
   document.getElementById('bad').value = rec.bad || '';
   document.getElementById('next').value = rec.next || '';
