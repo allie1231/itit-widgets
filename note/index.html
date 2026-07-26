@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>itit note</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="../style.css" />
+<style>
+  body { padding: 0; }
+  .note {
+    position: relative;
+    width: 100vw;
+    min-height: 100vh;
+    padding: 22px 24px 20px;
+    background: var(--bg, #FDEFC9);
+    color: var(--fg, #7B7250);
+    transition: background .25s, color .25s;
+    display: flex;
+    flex-direction: column;
+  }
+  .id-label {
+    font-size: 9.5px;
+    letter-spacing: 2px;
+    opacity: .45;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.7;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: inherit;
+    font-family: inherit;
+  }
+  .content:empty::before {
+    content: attr(data-placeholder);
+    opacity: .35;
+  }
+  .content[contenteditable="true"] {
+    caret-color: currentColor;
+  }
+
+  /* toolbar */
+  .toolbar {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .note:hover .toolbar { opacity: 1; }
+  .tb-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: .5;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .tb-btn:hover { opacity: 1; background: rgba(0,0,0,.05); }
+
+  /* color panel */
+  .panel {
+    position: absolute;
+    top: 44px;
+    right: 14px;
+    background: white;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    display: none;
+    z-index: 10;
+    min-width: 180px;
+  }
+  .panel.on { display: block; }
+  .panel h4 {
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .swatch {
+    aspect-ratio: 1;
+    border-radius: 5px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+  }
+  .swatch:hover { border-color: rgba(0,0,0,.15); }
+  .swatch.active { border-color: rgba(0,0,0,.4); }
+
+  .saved-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 9px;
+    opacity: 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: opacity .3s;
+  }
+  .saved-hint.show { opacity: .5; }
+</style>
+</head>
+<body>
+<div class="note" id="note">
+  <div class="id-label" id="idLabel">note</div>
+
+  <div class="toolbar">
+    <button class="tb-btn" id="editBtn" title="편집">✎</button>
+    <button class="tb-btn" id="colorBtn" title="색">◐</button>
+  </div>
+
+  <div class="panel" id="panel">
+    <h4>배경</h4>
+    <div class="swatches" id="bgSwatches"></div>
+    <h4>글자</h4>
+    <div class="swatches" id="fgSwatches"></div>
+  </div>
+
+  <div class="content" id="content" data-placeholder="여기에 적어보세요"></div>
+
+  <div class="saved-hint" id="hint">저장됨</div>
+</div>
+
+<script>
+  const BG_PALETTE = [
+    '#FDEFC9', // 버터
+    '#FCE0E7', // 블러시
+    '#D8E9F4', // 하늘
+    '#E7F0DC', // 민트
+    '#EDE4F0', // 라일락
+    '#F5E6DA', // 크림
+    '#F5D8D0', // 살구
+    '#DCE9DC', // 세이지
+    '#FFFFFF', // 화이트
+    '#F5F2EC', // 아이보리
+    '#E8E4DC', // 그레이지
+    '#7B98AE', // 잉크
+  ];
+  const FG_PALETTE = [
+    '#7B7250', // 다크 브라운
+    '#8A5A6E', // 다크 블러시
+    '#5A7A93', // 다크 잉크
+    '#5E7A4E', // 다크 그린
+    '#6E5A7A', // 다크 라일락
+    '#8A7B6E', // 다크 크림
+    '#9E6E5E', // 다크 살구
+    '#556B55', // 다크 세이지
+    '#333333', // 다크 그레이
+    '#6E6A5E', // 웜 그레이
+    '#4A4A4A', // 차콜
+    '#FFFFFF', // 화이트
+  ];
+
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id') || 'default';
+  document.getElementById('idLabel').textContent = 'note · ' + id;
+
+  const KEY = 'itit.note.' + id;
+  const state = load();
+
+  function load() {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY));
+      if (v && typeof v === 'object') return v;
+    } catch(e){}
+    return { text: '', bg: BG_PALETTE[0], fg: FG_PALETTE[0] };
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    const hint = document.getElementById('hint');
+    hint.classList.add('show');
+    setTimeout(() => hint.classList.remove('show'), 1200);
+  }
+
+  function apply() {
+    document.getElementById('note').style.setProperty('--bg', state.bg);
+    document.getElementById('note').style.setProperty('--fg', state.fg);
+    document.getElementById('content').textContent = state.text || '';
+  }
+
+  function buildSwatches(container, palette, current, onPick) {
+    container.innerHTML = '';
+    palette.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'swatch' + (c === current ? ' active' : '');
+      el.style.background = c;
+      el.onclick = () => {
+        onPick(c);
+        buildSwatches(container, palette, c, onPick);
+      };
+      container.appendChild(el);
+    });
+  }
+
+  function refreshSwatches() {
+    buildSwatches(document.getElementById('bgSwatches'), BG_PALETTE, state.bg, c => {
+      state.bg = c; apply(); save();
+    });
+    buildSwatches(document.getElementById('fgSwatches'), FG_PALETTE, state.fg, c => {
+      state.fg = c; apply(); save();
+    });
+  }
+
+  const content = document.getElementById('content');
+  const editBtn = document.getElementById('editBtn');
+  const colorBtn = document.getElementById('colorBtn');
+  const panel = document.getElementById('panel');
+
+  let editing = false;
+  function toggleEdit() {
+    editing = !editing;
+    content.contentEditable = editing;
+    if (editing) content.focus();
+    editBtn.style.opacity = editing ? '1' : '';
+  }
+  editBtn.onclick = toggleEdit;
+
+  content.addEventListener('input', () => {
+    state.text = content.textContent;
+    save();
+  });
+  content.addEventListener('blur', () => {
+    if (editing) toggleEdit();
+  });
+
+  colorBtn.onclick = () => {
+    panel.classList.toggle('on');
+    if (panel.classList.contains('on')) refreshSwatches();
+  };
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && e.target !== colorBtn) {
+      panel.classList.remove('on');
+    }
+  });
+
+  apply();
+</script>
+</body>
+</html>
