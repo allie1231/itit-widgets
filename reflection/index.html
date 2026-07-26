@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>itit reflection</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<link rel="stylesheet" href="../style.css" />
+<style>
+  .refl { position: relative; }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field:last-of-type { margin-bottom: 0; }
+  .field .k {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid var(--sky-soft);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-strong);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 1.55;
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field textarea:focus {
+    border-color: var(--ink-soft);
+  }
+  .field textarea::placeholder {
+    color: var(--ink-soft);
+    opacity: .5;
+  }
+
+  .hint-save {
+    position: absolute;
+    bottom: -4px;
+    right: 0;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .hint-save.show { opacity: .6; }
+</style>
+</head>
+<body>
+<div class="widget refl">
+  <div class="label">Reflection</div>
+
+  <div class="field">
+    <div class="k">잘한 것</div>
+    <textarea id="good" placeholder="오늘 뭐가 좋았어요?" rows="2"></textarea>
+  </div>
+  <div class="field">
+    <div class="k">아쉬운 것</div>
+    <textarea id="bad" placeholder="뭐가 아쉬웠어요?" rows="2"></textarea>
+  </div>
+  <div class="field">
+    <div class="k">다음에는</div>
+    <textarea id="next" placeholder="내일은 어떻게 해볼까요?" rows="2"></textarea>
+  </div>
+
+  <span class="hint-save" id="hint">저장됨</span>
+</div>
+
+<script src="../shared.js"></script>
+<script>
+  const today = ITIT.today();
+  const rec = ITIT.loadReflection(today);
+
+  document.getElementById('good').value = rec.good || '';
+  document.getElementById('bad').value = rec.bad || '';
+  document.getElementById('next').value = rec.next || '';
+
+  ['good', 'bad', 'next'].forEach(field => {
+    const el = document.getElementById(field);
+    let saveTimer;
+    el.addEventListener('input', () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        ITIT.saveReflection(today, field, el.value);
+        ITIT.hint(document.getElementById('hint'));
+      }, 400);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>itit · 이번 주 요약</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root {
+    --sky: #D8E9F4;
+    --sky-soft: #EEF5FB;
+    --blush: #FCE0E7;
+    --butter: #FDEFC9;
+    --ink: #7B98AE;
+    --ink-soft: #B0C4D3;
+    --ink-strong: #5A7A93;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #F5F9FC;
+    color: var(--ink);
+    font-family: 'Pretendard','Apple SD Gothic Neo',-apple-system,sans-serif;
+    padding: 60px 24px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 22px;
+    color: var(--ink-strong);
+    font-weight: 500;
+    letter-spacing: -.3px;
+    margin-bottom: 4px;
+  }
+  .week {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 1px;
+    margin-bottom: 32px;
+  }
+
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 26px;
+    margin-bottom: 16px;
+  }
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-size: 13px;
+    color: var(--ink-strong);
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .copy {
+    background: transparent;
+    border: 1px solid var(--sky);
+    color: var(--ink);
+    padding: 4px 12px;
+    font-family: inherit;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy:hover {
+    background: var(--sky);
+    color: var(--ink-strong);
+  }
+  .copy.copied {
+    background: var(--butter);
+    border-color: var(--butter);
+  }
+
+  .content {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink);
+    white-space: pre-wrap;
+    font-family: inherit;
+  }
+  .content strong {
+    color: var(--ink-strong);
+    font-weight: 500;
+  }
+  .empty {
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 12px 0;
+  }
+
+  .footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 11px;
+    letter-spacing: .5px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px dotted var(--sky);
+  }
+  .footer button {
+    background: transparent;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: .5px;
+    padding: 4px 8px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .15s;
+  }
+  .footer button:hover { text-decoration-color: currentColor; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>이번 주 요약</h1>
+  <div class="week" id="weekRange">—</div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>무드</h2>
+      <button class="copy" data-section="mood">복사</button>
+    </div>
+    <div class="content" id="moodContent"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>루틴</h2>
+      <button class="copy" data-section="routine">복사</button>
+    </div>
+    <div class="content" id="routineContent"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>회고</h2>
+      <button class="copy" data-section="reflection">복사</button>
+    </div>
+    <div class="content" id="reflectionContent"></div>
+  </div>
+
+  <div class="footer">
+    <button onclick="copyAll()">전체 복사</button>
+    <span> · </span>
+    <button onclick="clearWeek()">이번 주 데이터 지우기</button>
+  </div>
+</div>
+
+<script src="../shared.js"></script>
+<script>
+  const week = ITIT.thisWeek();
+  document.getElementById('weekRange').textContent =
+    ITIT.short(week[0]) + ' – ' + ITIT.short(week[6]);
+
+  // ── 무드 정리 ──────────────────────────────
+  const moodData = week.map(d => ({ date: d, ...ITIT.loadMood(d) }));
+
+  function renderMoodDisplay() {
+    let lines = [];
+    moodData.forEach(row => {
+      if (!row.morning && !row.night) return;
+      let parts = [ITIT.short(row.date)];
+      if (row.morning) parts.push('아침 ' + ITIT.MOOD_LABELS[row.morning] + '(' + row.morning + ')');
+      if (row.night) parts.push('밤 ' + ITIT.MOOD_LABELS[row.night] + '(' + row.night + ')');
+      lines.push(parts.join(' · '));
+    });
+    const box = document.getElementById('moodContent');
+    if (lines.length === 0) {
+      box.innerHTML = '<div class="empty">아직 데이터가 없어요</div>';
+    } else {
+      box.textContent = lines.join('\n');
+    }
+  }
+
+  function moodMarkdown() {
+    // 노션 무드 DB용: 하나씩 잘라서
+    let out = [];
+    moodData.forEach(row => {
+      if (row.morning) {
+        out.push('- ' + row.date + ' | 아침 | ' + ITIT.MOOD_LABELS[row.morning] + ' | ' + row.morning);
+      }
+      if (row.night) {
+        out.push('- ' + row.date + ' | 밤 | ' + ITIT.MOOD_LABELS[row.night] + ' | ' + row.night);
+      }
+    });
+    return out.join('\n') || '(데이터 없음)';
+  }
+
+  // ── 루틴 정리 ──────────────────────────────
+  const routineData = week.map(d => ({ date: d, items: ITIT.loadRoutine(d) }));
+
+  function renderRoutineDisplay() {
+    // 항목별 완료율
+    const totals = {};
+    ITIT.ROUTINE_ITEMS.forEach(i => totals[i] = 0);
+    routineData.forEach(row => {
+      Object.keys(row.items).forEach(i => {
+        if (totals[i] !== undefined) totals[i]++;
+      });
+    });
+
+    const daysWithData = routineData.filter(r => Object.keys(r.items).length).length;
+    if (daysWithData === 0) {
+      document.getElementById('routineContent').innerHTML = '<div class="empty">아직 데이터가 없어요</div>';
+      return;
+    }
+
+    let lines = [];
+    ITIT.ROUTINE_ITEMS.forEach(item => {
+      lines.push(item + '  ' + totals[item] + ' / 7');
+    });
+    document.getElementById('routineContent').textContent = lines.join('\n');
+  }
+
+  function routineMarkdown() {
+    let out = [];
+    routineData.forEach(row => {
+      const done = Object.keys(row.items);
+      if (done.length === 0) return;
+      done.forEach(item => {
+        out.push('- ' + row.date + ' | ' + item + ' | 완료');
+      });
+    });
+    return out.join('\n') || '(데이터 없음)';
+  }
+
+  // ── 회고 정리 ──────────────────────────────
+  const reflectionData = week.map(d => ({ date: d, ...ITIT.loadReflection(d) }));
+
+  function renderReflectionDisplay() {
+    let blocks = [];
+    reflectionData.forEach(row => {
+      if (!row.good && !row.bad && !row.next) return;
+      let parts = [ITIT.short(row.date)];
+      if (row.good) parts.push('  잘한 것: ' + row.good);
+      if (row.bad) parts.push('  아쉬운 것: ' + row.bad);
+      if (row.next) parts.push('  다음에는: ' + row.next);
+      blocks.push(parts.join('\n'));
+    });
+    const box = document.getElementById('reflectionContent');
+    if (blocks.length === 0) {
+      box.innerHTML = '<div class="empty">아직 데이터가 없어요</div>';
+    } else {
+      box.textContent = blocks.join('\n\n');
+    }
+  }
+
+  function reflectionMarkdown() {
+    let out = [];
+    reflectionData.forEach(row => {
+      if (!row.good && !row.bad && !row.next) return;
+      out.push('## ' + row.date + ' (일간)');
+      if (row.good) out.push('**잘한 것**: ' + row.good);
+      if (row.bad) out.push('**아쉬운 것**: ' + row.bad);
+      if (row.next) out.push('**다음에는**: ' + row.next);
+      out.push('');
+    });
+    return out.join('\n') || '(데이터 없음)';
+  }
+
+  // ── 복사 버튼 ───────────────────────────────
+  document.querySelectorAll('.copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.dataset.section;
+      let text = '';
+      if (section === 'mood') text = moodMarkdown();
+      else if (section === 'routine') text = routineMarkdown();
+      else if (section === 'reflection') text = reflectionMarkdown();
+      navigator.clipboard.writeText(text);
+      btn.textContent = '복사됨';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '복사';
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  });
+
+  function copyAll() {
+    const text = [
+      '# ' + ITIT.short(week[0]) + ' – ' + ITIT.short(week[6]) + ' 요약',
+      '',
+      '## 무드',
+      moodMarkdown(),
+      '',
+      '## 루틴',
+      routineMarkdown(),
+      '',
+      '## 회고',
+      reflectionMarkdown(),
+    ].join('\n');
+    navigator.clipboard.writeText(text);
+    alert('전체 복사 완료');
+  }
+
+  function clearWeek() {
+    if (!confirm('이번 주 데이터를 정말 지울까요?\n(노션에 옮긴 뒤에만 실행하세요)')) return;
+    week.forEach(d => {
+      localStorage.removeItem('itit.mood.' + d);
+      localStorage.removeItem('itit.routine.' + d);
+      localStorage.removeItem('itit.reflection.' + d);
+    });
+    location.reload();
+  }
+
+  renderMoodDisplay();
+  renderRoutineDisplay();
+  renderReflectionDisplay();
+</script>
+</body>
+</html>
