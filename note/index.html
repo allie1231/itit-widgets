@@ -7,24 +7,28 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link rel="stylesheet" href="../style.css" />
 <style>
-  body { padding: 0; }
+  body { padding: 0; overflow: hidden; }
+
   .note {
     position: relative;
     width: 100vw;
+    height: 100vh;
     min-height: 100vh;
-    padding: 22px 24px 20px;
-    background: var(--bg, #FDEFC9);
-    color: var(--fg, #7B7250);
+    padding: 22px 24px 22px;
+    background: var(--bg, #FEFCF5);
+    color: var(--fg, #9A8B6E);
     transition: background .25s, color .25s;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
   }
   .id-label {
     font-size: 9.5px;
     letter-spacing: 2px;
-    opacity: .45;
+    opacity: .5;
     text-transform: uppercase;
     margin-bottom: 12px;
+    color: inherit;
   }
   .content {
     flex: 1;
@@ -35,6 +39,8 @@
     word-break: break-word;
     color: inherit;
     font-family: inherit;
+    overflow-y: auto;
+    padding-bottom: 20px;
   }
   .content:empty::before {
     content: attr(data-placeholder);
@@ -44,7 +50,7 @@
     caret-color: currentColor;
   }
 
-  /* toolbar */
+  /* toolbar - 항상 살짝 보이게 */
   .toolbar {
     position: absolute;
     top: 14px;
@@ -52,38 +58,41 @@
     display: flex;
     gap: 4px;
     align-items: center;
-    opacity: 0;
+    z-index: 20;
+    opacity: .4;
     transition: opacity .2s;
   }
   .note:hover .toolbar { opacity: 1; }
   .tb-btn {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border: none;
     background: transparent;
     color: inherit;
-    opacity: .5;
     cursor: pointer;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 13px;
     display: grid;
     place-items: center;
     padding: 0;
+    line-height: 1;
   }
-  .tb-btn:hover { opacity: 1; background: rgba(0,0,0,.05); }
+  .tb-btn:hover { background: rgba(0,0,0,.06); }
+  .tb-btn.active { background: rgba(0,0,0,.08); }
 
   /* color panel */
   .panel {
     position: absolute;
-    top: 44px;
+    top: 48px;
     right: 14px;
     background: white;
     border-radius: 10px;
-    padding: 10px 12px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    padding: 12px 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.1);
     display: none;
-    z-index: 10;
-    min-width: 180px;
+    z-index: 30;
+    min-width: 200px;
+    color: #555;
   }
   .panel.on { display: block; }
   .panel h4 {
@@ -100,24 +109,28 @@
     gap: 5px;
     margin-bottom: 12px;
   }
+  .swatches:last-child { margin-bottom: 0; }
   .swatch {
     aspect-ratio: 1;
     border-radius: 5px;
-    border: 1.5px solid transparent;
+    border: 1.5px solid rgba(0,0,0,.05);
     cursor: pointer;
+    padding: 0;
+    transition: transform .1s;
   }
-  .swatch:hover { border-color: rgba(0,0,0,.15); }
-  .swatch.active { border-color: rgba(0,0,0,.4); }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.active { border-color: rgba(0,0,0,.5); }
 
   .saved-hint {
     position: absolute;
-    bottom: 12px;
-    right: 16px;
+    bottom: 14px;
+    right: 18px;
     font-size: 9px;
     opacity: 0;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     transition: opacity .3s;
+    pointer-events: none;
   }
   .saved-hint.show { opacity: .5; }
 </style>
@@ -127,8 +140,8 @@
   <div class="id-label" id="idLabel">note</div>
 
   <div class="toolbar">
-    <button class="tb-btn" id="editBtn" title="편집">✎</button>
-    <button class="tb-btn" id="colorBtn" title="색">◐</button>
+    <button type="button" class="tb-btn" id="editBtn" title="편집" aria-label="편집">✎</button>
+    <button type="button" class="tb-btn" id="colorBtn" title="색" aria-label="색">◐</button>
   </div>
 
   <div class="panel" id="panel">
@@ -144,33 +157,35 @@
 </div>
 
 <script>
+  // 옅은 파스텔 톤 (배경) - 눈에 편한 옅기
   const BG_PALETTE = [
-    '#FDEFC9', // 버터
-    '#FCE0E7', // 블러시
-    '#D8E9F4', // 하늘
-    '#E7F0DC', // 민트
-    '#EDE4F0', // 라일락
-    '#F5E6DA', // 크림
-    '#F5D8D0', // 살구
-    '#DCE9DC', // 세이지
     '#FFFFFF', // 화이트
-    '#F5F2EC', // 아이보리
-    '#E8E4DC', // 그레이지
-    '#7B98AE', // 잉크
+    '#FEFCF5', // 아이보리
+    '#FDF7E8', // 옅은 버터
+    '#FDF1F0', // 옅은 블러시
+    '#F5FAFD', // 옅은 하늘
+    '#F3F8ED', // 옅은 민트
+    '#F8F3F8', // 옅은 라일락
+    '#FBF6F0', // 옅은 크림
+    '#F5F0EC', // 그레이지
+    '#F0F5F0', // 옅은 세이지
+    '#FDEFC9', // 진한 버터
+    '#FCE0E7', // 진한 블러시
   ];
+  // 글자색 (배경과 대비)
   const FG_PALETTE = [
-    '#7B7250', // 다크 브라운
+    '#5A5A5A', // 진한 그레이
+    '#7B7250', // 브라운
+    '#5A7A93', // 잉크
     '#8A5A6E', // 다크 블러시
-    '#5A7A93', // 다크 잉크
-    '#5E7A4E', // 다크 그린
     '#6E5A7A', // 다크 라일락
-    '#8A7B6E', // 다크 크림
-    '#9E6E5E', // 다크 살구
-    '#556B55', // 다크 세이지
-    '#333333', // 다크 그레이
-    '#6E6A5E', // 웜 그레이
-    '#4A4A4A', // 차콜
-    '#FFFFFF', // 화이트
+    '#5E7A4E', // 다크 그린
+    '#9A8B6E', // 옅은 브라운
+    '#8A9AA8', // 옅은 잉크
+    '#333333', // 차콜
+    '#7B98AE', // 미디엄 잉크
+    '#B0A090', // 옅은 브라운
+    '#A08590', // 옅은 로즈
   ];
 
   const params = new URLSearchParams(location.search);
@@ -178,35 +193,41 @@
   document.getElementById('idLabel').textContent = 'note · ' + id;
 
   const KEY = 'itit.note.' + id;
-  const state = load();
+  let state = load();
 
   function load() {
     try {
       const v = JSON.parse(localStorage.getItem(KEY));
       if (v && typeof v === 'object') return v;
     } catch(e){}
-    return { text: '', bg: BG_PALETTE[0], fg: FG_PALETTE[0] };
+    return { text: '', bg: BG_PALETTE[1], fg: FG_PALETTE[6] };
   }
   function save() {
     localStorage.setItem(KEY, JSON.stringify(state));
     const hint = document.getElementById('hint');
     hint.classList.add('show');
-    setTimeout(() => hint.classList.remove('show'), 1200);
+    clearTimeout(save._t);
+    save._t = setTimeout(() => hint.classList.remove('show'), 1000);
   }
 
   function apply() {
-    document.getElementById('note').style.setProperty('--bg', state.bg);
-    document.getElementById('note').style.setProperty('--fg', state.fg);
-    document.getElementById('content').textContent = state.text || '';
+    const note = document.getElementById('note');
+    note.style.setProperty('--bg', state.bg);
+    note.style.setProperty('--fg', state.fg);
+    const content = document.getElementById('content');
+    if (!editing) content.textContent = state.text || '';
   }
 
   function buildSwatches(container, palette, current, onPick) {
     container.innerHTML = '';
     palette.forEach(c => {
-      const el = document.createElement('div');
+      const el = document.createElement('button');
+      el.type = 'button';
       el.className = 'swatch' + (c === current ? ' active' : '');
       el.style.background = c;
-      el.onclick = () => {
+      el.title = c;
+      el.onclick = (ev) => {
+        ev.stopPropagation();
         onPick(c);
         buildSwatches(container, palette, c, onPick);
       };
@@ -229,30 +250,55 @@
   const panel = document.getElementById('panel');
 
   let editing = false;
-  function toggleEdit() {
-    editing = !editing;
-    content.contentEditable = editing;
-    if (editing) content.focus();
-    editBtn.style.opacity = editing ? '1' : '';
+  function setEdit(on) {
+    editing = on;
+    content.contentEditable = on ? 'true' : 'false';
+    editBtn.classList.toggle('active', on);
+    if (on) {
+      content.focus();
+      // 커서 끝으로
+      const range = document.createRange();
+      range.selectNodeContents(content);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
   }
-  editBtn.onclick = toggleEdit;
+
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setEdit(!editing);
+  });
 
   content.addEventListener('input', () => {
     state.text = content.textContent;
     save();
   });
-  content.addEventListener('blur', () => {
-    if (editing) toggleEdit();
+
+  colorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOn = panel.classList.contains('on');
+    if (isOn) {
+      panel.classList.remove('on');
+      colorBtn.classList.remove('active');
+    } else {
+      panel.classList.add('on');
+      colorBtn.classList.add('active');
+      refreshSwatches();
+    }
   });
 
-  colorBtn.onclick = () => {
-    panel.classList.toggle('on');
-    if (panel.classList.contains('on')) refreshSwatches();
-  };
   document.addEventListener('click', (e) => {
     if (!panel.contains(e.target) && e.target !== colorBtn) {
       panel.classList.remove('on');
+      colorBtn.classList.remove('active');
     }
+  });
+
+  // content 클릭 시 자동 편집 모드 진입
+  content.addEventListener('click', (e) => {
+    if (!editing) setEdit(true);
   });
 
   apply();
