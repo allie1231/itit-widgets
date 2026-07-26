@@ -8,228 +8,308 @@
 <link rel="stylesheet" href="../style.css" />
 <style>
   body { padding: 16px; }
-  .pl { position: relative; }
-  .player {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 4px;
+
+  .pod {
+    position: relative;
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  /* 화면 */
+  .screen {
+    background: linear-gradient(160deg, #F5F9FC 0%, #EAF2F8 100%);
+    border-radius: 14px;
+    padding: 22px 20px 18px;
+    text-align: center;
+    color: var(--ink-strong);
+    position: relative;
+    overflow: hidden;
+  }
+  .screen .label {
+    font-size: 8.5px;
+    letter-spacing: 2px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    text-transform: uppercase;
   }
   .cover {
-    flex: 0 0 84px;
-    height: 84px;
-    border-radius: 14px;
+    width: 62px;
+    height: 62px;
+    border-radius: 10px;
     background: linear-gradient(135deg, #FCE0E7 0%, #FDEFC9 55%, #D8E9F4 100%);
-    overflow: hidden;
-    cursor: pointer;
-    position: relative;
+    margin: 0 auto 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
   }
-  .cover iframe {
-    width: 100%; height: 100%; border: 0;
-    opacity: 0;
-    transition: opacity .3s;
-  }
-  .cover.playing iframe { opacity: 1; }
-  .cover .play {
-    position: absolute; inset: 0;
-    display: grid; place-items: center;
-    color: rgba(255,255,255,.9);
-    font-size: 24px;
-    pointer-events: none;
-    transition: opacity .3s;
-  }
-  .cover.playing .play { opacity: 0; }
-  .info { flex: 1; min-width: 0; }
-  .title {
-    font-size: 14px;
+  .track-title {
+    font-size: 12.5px;
     font-weight: 500;
     color: var(--ink-strong);
     margin-bottom: 4px;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
-  .sub {
-    font-size: 11.5px;
+  .track-num {
+    font-size: 9.5px;
     color: var(--ink-soft);
-    letter-spacing: .3px;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
   }
-  .ctrl {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  .btn {
-    width: 30px; height: 30px;
+  .track-num.empty { color: var(--ink-soft); opacity: .6; }
+
+  /* 컨트롤 휠 */
+  .wheel {
+    width: 130px;
+    height: 130px;
+    margin: 22px auto 4px;
     border-radius: 50%;
+    background: #FAFBFD;
+    position: relative;
+    box-shadow: inset 0 0 0 1px #EAEDF0;
+  }
+  .wheel-btn {
+    position: absolute;
     background: transparent;
     border: none;
-    color: var(--ink);
     cursor: pointer;
-    display: grid; place-items: center;
-    font-size: 13px;
+    color: var(--ink-soft);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    transition: color .15s;
   }
-  .btn:hover { background: var(--sky-soft); color: var(--ink-strong); }
+  .wheel-btn:hover { color: var(--ink-strong); }
+  .wheel-btn.menu { top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 20px; font-size: 8.5px; text-transform: uppercase; }
+  .wheel-btn.prev { top: 50%; left: 8px; transform: translateY(-50%); width: 24px; height: 24px; font-size: 14px; }
+  .wheel-btn.next { top: 50%; right: 8px; transform: translateY(-50%); width: 24px; height: 24px; font-size: 14px; }
+  .wheel-btn.play { bottom: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 20px; font-size: 10px; }
 
-  /* 편집 모드 */
-  .edit-panel {
+  .center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: inset 0 0 0 1px #EAEDF0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    color: var(--ink-strong);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .center:hover { background: #FCFCFD; }
+
+  /* 편집 패널 */
+  .edit {
     display: none;
-    margin-top: 12px;
-    padding: 10px 12px;
-    background: var(--sky-soft);
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #F5F9FC;
     border-radius: 10px;
   }
-  .edit-panel.on { display: block; }
+  .edit.on { display: block; }
   .edit-row {
     display: flex; gap: 6px; align-items: center;
     margin-bottom: 6px;
-    font-size: 11.5px;
   }
   .edit-row input {
     flex: 1;
-    padding: 5px 8px;
-    border: 1px solid var(--ink-soft);
+    padding: 6px 9px;
+    border: 1px solid #DEE5EC;
     background: white;
     border-radius: 5px;
     font-family: inherit;
     font-size: 11px;
-    color: var(--ink);
+    color: var(--ink-strong);
     outline: none;
+    min-width: 0;
   }
   .edit-row input:focus { border-color: var(--ink); }
+  .edit-row input.name { max-width: 90px; }
   .edit-row .del {
-    width: 22px; height: 22px; border-radius: 50%;
+    width: 22px; height: 22px; border-radius: 4px;
     border: none; background: transparent;
     color: var(--ink-soft); cursor: pointer;
-    font-size: 11px;
+    font-size: 12px;
   }
-  .edit-row .del:hover { color: var(--ink-strong); }
+  .edit-row .del:hover { color: var(--ink-strong); background: white; }
   .edit-actions {
-    display: flex; gap: 8px; margin-top: 8px;
-    font-size: 10.5px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    display: flex; gap: 4px; margin-top: 10px;
+    justify-content: flex-end;
   }
   .edit-actions button {
     background: transparent; border: none;
-    color: var(--ink); cursor: pointer;
-    padding: 4px 10px; border-radius: 5px;
+    color: var(--ink-soft); cursor: pointer;
+    padding: 5px 10px; border-radius: 5px;
+    font-size: 10.5px;
+    letter-spacing: .5px;
   }
-  .edit-actions button:hover { background: white; }
+  .edit-actions button:hover { background: white; color: var(--ink-strong); }
+  .edit-actions button.save { color: var(--ink-strong); background: white; }
+  .edit-actions button.save:hover { background: var(--sky); }
+
+  /* iframe 숨김 (자동재생 트리거용) */
+  .frame {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .frame.playing {
+    position: relative;
+    top: auto; left: auto;
+    width: 100%;
+    height: 180px;
+    opacity: 1;
+    pointer-events: auto;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 10px;
+  }
 </style>
 </head>
 <body>
-<div class="widget pl">
-  <div class="label">Playlist</div>
-  <button class="gear" title="편집" onclick="startEdit()">✎</button>
-  <div class="player">
-    <div class="cover" id="cover" onclick="togglePlay()">
-      <iframe id="iframe" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-      <div class="play">▶</div>
-    </div>
-    <div class="info">
-      <div class="title" id="title">잔잔한 오후</div>
-      <div class="sub" id="sub">재영님 리스트 · 1 / 3</div>
-    </div>
-    <div class="ctrl">
-      <button class="btn" onclick="prev()">‹</button>
-      <button class="btn" onclick="next()">›</button>
-    </div>
+<div class="pod">
+  <div class="screen">
+    <div class="label">Now playing</div>
+    <div class="cover"></div>
+    <div class="track-title" id="title">─</div>
+    <div class="track-num" id="num">─</div>
   </div>
 
-  <div class="edit-panel" id="edit">
-    <div id="edit-list"></div>
+  <div class="wheel">
+    <button class="wheel-btn menu" onclick="toggleEdit()">Menu</button>
+    <button class="wheel-btn prev" onclick="prev()">‹</button>
+    <button class="wheel-btn next" onclick="next()">›</button>
+    <button class="wheel-btn play" onclick="togglePlay()" id="playLabel">Play</button>
+    <button class="center" onclick="togglePlay()">▶</button>
+  </div>
+
+  <iframe class="frame" id="frame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
+  <div class="edit" id="edit">
+    <div id="list"></div>
     <div class="edit-actions">
-      <button onclick="addRow()">+ 플리 추가</button>
-      <button onclick="saveEdit()">저장</button>
-      <button onclick="cancelEdit()">닫기</button>
+      <button onclick="addRow()">+ 추가</button>
+      <button class="save" onclick="saveEdit()">저장</button>
+      <button onclick="closeEdit()">닫기</button>
     </div>
   </div>
 </div>
 
 <script>
-  const KEY = 'itit.playlists';
+  const KEY = 'itit.playlist';
   const DEFAULT = [
-    { title: '잔잔한 오후', url: 'https://www.youtube.com/embed/videoseries?list=PLkbxeFRJPfDlHDzNyDF5NpHPjbmXswUuw' },
-    { title: '집중 재즈', url: 'https://www.youtube.com/embed/videoseries?list=PLwg22VSCR0W-ObTip8YrLNfXCS9F5D2qk' },
-    { title: '카페 로파이', url: 'https://www.youtube.com/embed/jfKfPfyJRdk' },
+    { title: '잔잔한 오후', url: 'https://youtu.be/jfKfPfyJRdk' },
   ];
 
-  let plists = [];
+  let list = load();
   let current = 0;
   let playing = false;
 
-  function load(){
+  function load() {
     try {
       const v = JSON.parse(localStorage.getItem(KEY));
       if (Array.isArray(v) && v.length) return v;
     } catch(e){}
     return DEFAULT;
   }
-  function save(v){ localStorage.setItem(KEY, JSON.stringify(v)); }
+  function save() { localStorage.setItem(KEY, JSON.stringify(list)); }
 
-  function toEmbed(raw){
+  function toEmbed(raw) {
     if (!raw) return '';
-    // 이미 embed 형식
     if (raw.includes('/embed/')) return raw;
-    // youtu.be/xxx
     let m = raw.match(/youtu\.be\/([\w-]+)/);
     if (m) return 'https://www.youtube.com/embed/' + m[1];
-    // playlist=xxx
     m = raw.match(/[?&]list=([\w-]+)/);
     if (m) return 'https://www.youtube.com/embed/videoseries?list=' + m[1];
-    // watch?v=xxx
     m = raw.match(/[?&]v=([\w-]+)/);
     if (m) return 'https://www.youtube.com/embed/' + m[1];
     return raw;
   }
 
-  function render(){
-    if (!plists.length) plists = load();
-    const p = plists[current];
-    document.getElementById('title').textContent = p.title;
-    document.getElementById('sub').textContent =
-      '재영님 리스트 · ' + (current + 1) + ' / ' + plists.length;
+  function render() {
+    if (!list.length) {
+      document.getElementById('title').textContent = '없음';
+      document.getElementById('num').textContent = '메뉴 → 추가';
+      return;
+    }
+    const t = list[current];
+    document.getElementById('title').textContent = t.title;
+    document.getElementById('num').textContent =
+      String(current + 1).padStart(2, '0') + ' / ' + String(list.length).padStart(2, '0');
+
+    const frame = document.getElementById('frame');
     if (playing) {
-      const url = toEmbed(p.url);
-      document.getElementById('iframe').src = url + (url.includes('?') ? '&' : '?') + 'autoplay=1';
+      const url = toEmbed(t.url);
+      frame.src = url + (url.includes('?') ? '&' : '?') + 'autoplay=1';
+      frame.classList.add('playing');
+      document.getElementById('playLabel').textContent = 'Pause';
+      document.querySelector('.center').textContent = '▐▐';
     } else {
-      document.getElementById('iframe').src = '';
+      frame.src = '';
+      frame.classList.remove('playing');
+      document.getElementById('playLabel').textContent = 'Play';
+      document.querySelector('.center').textContent = '▶';
     }
   }
 
-  function togglePlay(){
+  function togglePlay() {
+    if (!list.length) return;
     playing = !playing;
-    document.getElementById('cover').classList.toggle('playing', playing);
     render();
   }
-  function prev(){
-    current = (current - 1 + plists.length) % plists.length;
+  function prev() {
+    if (!list.length) return;
+    current = (current - 1 + list.length) % list.length;
     render();
   }
-  function next(){
-    current = (current + 1) % plists.length;
+  function next() {
+    if (!list.length) return;
+    current = (current + 1) % list.length;
     render();
   }
 
-  function startEdit(){
-    const list = document.getElementById('edit-list');
-    list.innerHTML = '';
-    plists.forEach((p, i) => addRow(p.title, p.url));
+  function toggleEdit() {
+    const box = document.getElementById('edit');
+    if (box.classList.contains('on')) {
+      closeEdit();
+    } else {
+      openEdit();
+    }
+  }
+  function openEdit() {
+    const listBox = document.getElementById('list');
+    listBox.innerHTML = '';
+    list.forEach(t => addRow(t.title, t.url));
     document.getElementById('edit').classList.add('on');
   }
-  function addRow(title = '', url = ''){
-    const list = document.getElementById('edit-list');
+  function closeEdit() {
+    document.getElementById('edit').classList.remove('on');
+  }
+  function addRow(title = '', url = '') {
+    const listBox = document.getElementById('list');
     const row = document.createElement('div');
     row.className = 'edit-row';
     row.innerHTML =
-      '<input placeholder="이름" value="' + escapeAttr(title) + '" style="max-width:120px;">' +
-      '<input placeholder="유튜브 URL" value="' + escapeAttr(url) + '">' +
+      '<input class="name" placeholder="이름" value="' + escapeAttr(title) + '">' +
+      '<input placeholder="youtube URL" value="' + escapeAttr(url) + '">' +
       '<button class="del" onclick="this.parentElement.remove()">×</button>';
-    list.appendChild(row);
+    listBox.appendChild(row);
   }
-  function saveEdit(){
-    const rows = document.querySelectorAll('#edit-list .edit-row');
+  function saveEdit() {
+    const rows = document.querySelectorAll('#list .edit-row');
     const next = [];
     rows.forEach(r => {
       const [t, u] = r.querySelectorAll('input');
@@ -237,19 +317,15 @@
         next.push({ title: t.value.trim(), url: u.value.trim() });
       }
     });
-    if (!next.length) return alert('최소 하나는 있어야 해요');
-    save(next);
-    plists = next;
+    list = next.length ? next : DEFAULT;
+    save();
     current = 0;
     playing = false;
-    document.getElementById('cover').classList.remove('playing');
-    document.getElementById('edit').classList.remove('on');
+    closeEdit();
     render();
   }
-  function cancelEdit(){
-    document.getElementById('edit').classList.remove('on');
-  }
-  function escapeAttr(s){
+
+  function escapeAttr(s) {
     return String(s).replace(/"/g,'&quot;');
   }
 
